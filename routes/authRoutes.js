@@ -1,17 +1,11 @@
 const express = require('express');
-const { signup, login } = require('../controllers/authController');
-const authMiddleware = require('../middleware/authMiddleware');
+const { signUpUser, signInUser } = require('../controllers/authController');
 const router = express.Router();
 
-// Signup route
-router.post('/signup', signup);
+// Route for sign-up
+router.post('/signup', signUpUser);
 
-// Login route
-router.post('/login', login);
-
-// Protected route (example)
-router.get('/profile', authMiddleware, (req, res) => {
-  res.json({ msg: `Welcome, ${req.user.email}` });
-});
+// Route for sign-in
+router.post('/signin', signInUser);
 
 module.exports = router;

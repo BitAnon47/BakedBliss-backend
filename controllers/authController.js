@@ -1,63 +1,71 @@
-const User = require('../models/userModel');
-const { hashPassword, comparePassword } = require('../utils/hashUtil');
-const { generateToken } = require('../utils/jwtUtil');
+const { db } = require('../config/firebaseConfig'); // Import Firestore
+const CryptoJS = require('crypto-js');
+const jwt = require('jsonwebtoken');
 
-// Signup logic
-const signup = async (req, res) => {
-  const { name, email, password } = req.body;
-
+// Sign-up function
+const signUpUser = async (req, res) => {
   try {
-    let user = await User.findOne({ email });
-    if (user) {
-      return res.status(400).json({ msg: 'User already exists' });
+    const { fullName, email, password, profilePicture, addresses, phoneNumber } = req.body;
+
+    // Check if user already exists
+    const userSnapshot = await db.collection('User').doc(email).get();
+    if (userSnapshot.exists) {
+      return res.status(400).json({ error: "User already exists." });
     }
 
-    // Hash password
-    const hashedPassword = hashPassword(password);
+    // Encrypt the password using crypto-js
+    const encryptedPassword = CryptoJS.AES.encrypt(password, process.env.SECRET_KEY).toString();
 
-    // Create new user
-    user = new User({
-      name,
+    // Create new user object
+    const newUser = {
+      fullName,
       email,
-      password: hashedPassword,
-    });
+      password: encryptedPassword,
+      profilePicture: profilePicture || null,
+      addresses: addresses || [],
+      phoneNumber: phoneNumber || null,
+      dateJoined: new Date().toISOString(),
+    };
 
-    await user.save();
-
-    // Generate JWT token
-    const token = generateToken(user);
-
-    return res.status(201).json({ msg: 'User registered successfully', token });
+    // Save user in Firestore
+    await db.collection('User').doc(email).set(newUser);
+    res.status(201).json({ message: "User signed up successfully!" });
   } catch (error) {
-    console.error(error);
-    return res.status(500).send('Server error');
+    console.error("Error signing up user:", error);
+    res.status(500).json({ error: "An error occurred during signup." });
   }
 };
 
-// Login logic
-const login = async (req, res) => {
-  const { email, password } = req.body;
-
+// Sign-in function
+const signInUser = async (req, res) => {
   try {
-    const user = await User.findOne({ email });
-    if (!user) {
-      return res.status(400).json({ msg: 'Invalid credentials' });
+    const { email, password } = req.body;
+
+    // Fetch user data from Firestore
+    const userSnapshot = await db.collection('User').doc(email).get();
+    if (!userSnapshot.exists) {
+      return res.status(400).json({ error: "User does not exist." });
     }
 
-    // Compare password
-    const isMatch = comparePassword(password, user.password);
-    if (!isMatch) {
-      return res.status(400).json({ msg: 'Invalid credentials' });
+    const userData = userSnapshot.data();
+
+    // Decrypt stored password
+    const decryptedPassword = CryptoJS.AES.decrypt(userData.password, process.env.SECRET_KEY).toString(CryptoJS.enc.Utf8);
+
+    // Compare passwords
+    if (decryptedPassword !== password) {
+      return res.status(400).json({ error: "Invalid credentials." });
     }
 
     // Generate JWT token
-    const token = generateToken(user);
+    const token = jwt.sign({ email: userData.email, fullName: userData.fullName }, process.env.JWT_SECRET, { expiresIn: '1h' });
 
-    return res.status(200).json({ msg: 'Login successful', token });
+    // Send response with token
+    res.status(200).json({ message: "Login successful!", token });
   } catch (error) {
-    console.error(error);
-    return res.status(500).send('Server error');
+    console.error("Error signing in user:", error);
+    res.status(500).json({ error: "An error occurred during sign-in." });
   }
 };
 
-module.exports = { signup, login };
+module.exports = { signUpUser, signInUser };

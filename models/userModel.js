@@ -1,21 +1,6 @@
-const mongoose = require('mongoose');
+// Firebase doesn't require a model schema like Mongoose
+const db = require('../config/firebaseConfig');
 
-const userSchema = new mongoose.Schema({
-  name: {
-    type: String,
-    required: true,
-  },
-  email: {
-    type: String,
-    required: true,
-    unique: true,
-  },
-  password: {
-    type: String,
-    required: true,
-  },
-});
+const User = db.collection('User');
 
-const User = mongoose.model('User', userSchema);
-
-module.exports = User;
+module.exports = User; // Export the User collection for use in controllers

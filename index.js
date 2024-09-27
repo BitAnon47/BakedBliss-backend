@@ -1,19 +1,21 @@
 const express = require('express');
-const connectDB = require('./config/db');
+const bodyParser = require('body-parser');
 const authRoutes = require('./routes/authRoutes');
+require('dotenv').config();
 
-// Initialize the app
 const app = express();
+const PORT = process.env.PORT || 8000;
 
-// Connect Database
-connectDB();
+app.use(bodyParser.json());
 
-// Middleware for JSON parsing
-app.use(express.json());
+// Define a root route
+app.get('/', (req, res) => {
+  res.send('Welcome to the Authentication API!');
+});
 
-// Routes
+// Use the auth routes
 app.use('/api/auth', authRoutes);
 
-// Start the server
-const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => console.log(`Server is running on http://localhost:${PORT}`));
+app.listen(PORT, () => {
+  console.log(`Server running on http://localhost:${PORT}`);
+});

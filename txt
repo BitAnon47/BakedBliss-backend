@@ -1,0 +1,50 @@
+new json
+{
+  "id": 1,
+  "fullName": "John Doe",
+  "email": "john.doe@example.com",
+  "password": "securepassword123",
+  "profilePicture": "https://example.com/profile.jpg",  //nullable
+  "addresses": [
+    {
+      "street": "123 Main St",
+      "city": "Springfield",
+      "state": "IL",
+      "postalCode": "62701",
+      "country": "USA",
+      "landmark": "Near the central park", //nullable
+      "apartmentNumber": "Apt 2A",  //nullable
+      "phoneNumber": "555-123-4567" //nullable
+    }
+  ],
+  "phoneNumber": "555-987-6543", //nullable
+  "dateJoined": "2023-01-15T10:00:00Z"
+}
+
+
+Fire base
+npm install firebase
+
+
+*******************
+// Import the functions you need from the SDKs you need
+import { initializeApp } from "firebase/app";
+import { getAnalytics } from "firebase/analytics";
+// TODO: Add SDKs for Firebase products that you want to use
+// https://firebase.google.com/docs/web/setup#available-libraries
+
+// Your web app's Firebase configuration
+// For Firebase JS SDK v7.20.0 and later, measurementId is optional
+const firebaseConfig = {
+  apiKey: "AIzaSyAineO6DuMBwGM2v6jqfViB42hWNKEjfns",
+  authDomain: "baked-blissed.firebaseapp.com",
+  projectId: "baked-blissed",
+  storageBucket: "baked-blissed.appspot.com",
+  messagingSenderId: "141946842391",
+  appId: "1:141946842391:web:ac6fa94201bea3ceba5b52",
+  measurementId: "G-9KPWSE473W"
+};
+
+// Initialize Firebase
+const app = initializeApp(firebaseConfig);
+const analytics = getAnalytics(app);
