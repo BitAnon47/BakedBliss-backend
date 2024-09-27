@@ -29,7 +29,7 @@ const signUpUser = async (req, res) => {
 
     // Save user in Firestore
     await db.collection('User').doc(email).set(newUser);
-    res.status(201).json({ message: "User signed up successfully!" });
+    res.status(201).json({ message: "User registered successfully!" });
   } catch (error) {
     console.error("Error signing up user:", error);
     res.status(500).json({ error: "An error occurred during signup." });
