@@ -1,5 +1,4 @@
 const { db } = require('../config/firebaseConfig'); // Import Firestore
-const CryptoJS = require('crypto-js');
 const jwt = require('jsonwebtoken');
 
 // Sign-up function
