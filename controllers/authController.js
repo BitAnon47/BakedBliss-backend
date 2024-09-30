@@ -5,26 +5,30 @@ const jwt = require('jsonwebtoken');
 // Sign-up function
 const signUpUser = async (req, res) => {
   try {
-    const { fullName, email, password, profilePicture, addresses, phoneNumber } = req.body;
+    const { userId, fullName, email, profilePicture, addresses, phoneNumber, pushToken } = req.body;
 
     // Check if user already exists
     const userSnapshot = await db.collection('User').doc(email).get();
     if (userSnapshot.exists) {
+      // If the user exists and a push token is provided, update the push token
+      if (pushToken) {
+        await db.collection('User').doc(email).update({
+          pushToken: pushToken
+        });
+      }
       return res.status(400).json({ error: "User already exists." });
     }
 
-    // Encrypt the password using crypto-js
-    const encryptedPassword = CryptoJS.AES.encrypt(password, process.env.SECRET_KEY).toString();
-
-    // Create new user object
+    // Create new user object without a password
     const newUser = {
+      userId, // Store the user ID
       fullName,
       email,
-      password: encryptedPassword,
       profilePicture: profilePicture || null,
       addresses: addresses || [],
       phoneNumber: phoneNumber || null,
       dateJoined: new Date().toISOString(),
+      pushToken: pushToken || null, // Store the push token if provided
     };
 
     // Save user in Firestore
@@ -35,6 +39,7 @@ const signUpUser = async (req, res) => {
     res.status(500).json({ error: "An error occurred during signup." });
   }
 };
+
 
 // Sign-in function
 const signInUser = async (req, res) => {
