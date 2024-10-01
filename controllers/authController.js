@@ -7,7 +7,7 @@ const signUpUser = async (req, res) => {
     const { userId, fullName, email, profilePicture, addresses, phoneNumber, pushToken } = req.body;
 
     // Check if user already exists
-    const userSnapshot = await db.collection('User').doc(email).get();
+    const userSnapshot = await db.collection('User').doc(userId).get();
     if (userSnapshot.exists) {
       // If the user exists and a push token is provided, update the push token
       if (pushToken) {
@@ -31,7 +31,7 @@ const signUpUser = async (req, res) => {
     };
 
     // Save user in Firestore
-    await db.collection('User').doc(email).set(newUser);
+    await db.collection('User').doc(userId).set(newUser);
     res.status(201).json({ message: "User registered successfully!" });
   } catch (error) {
     console.error("Error signing up user:", error);
