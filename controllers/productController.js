@@ -4,18 +4,40 @@ const { db } = require('../config/firebaseConfig'); // Import the Firestore conf
 const searchProducts = async (req, res) => {
   try {
     const { query, page = 1, limit = 10 } = req.query; // Default page and limit
+
+    // Check if query is provided
+    if (!query) {
+      return res.status(400).json({ status: 'error', message: 'Query parameter is required.' });
+    }
+
     const productsRef = db.collection('products');
 
-    // Use `>=` and `<=` with '\uf8ff' for substring search
+    // Using Firestore's where clause to search title and category
     const snapshot = await productsRef
       .where('title', '>=', query)
-      .where('title', '<=', query + '\uf8ff') // '\uf8ff' ensures a range match for Firestore
+      .where('title', '<=', query + '\uf8ff') // Search by title
       .limit(Number(limit))
       .get();
 
     const products = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
 
+    // If no products found, search by category as well
+    if (products.length === 0) {
+      const categorySnapshot = await productsRef
+        .where('category', '>=', query)
+        .where('category', '<=', query + '\uf8ff') // Search by category
+        .limit(Number(limit))
+        .get();
+
+      const categoryProducts = categorySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      products.push(...categoryProducts); // Add found category products to results
+    }
+
     console.log(`Retrieved ${products.length} products.`); // Debug log
+
+    if (products.length === 0) {
+      return res.status(404).json({ status: 'error', message: 'No products found.' });
+    }
 
     res.status(200).json({ status: 'success', data: products });
   } catch (error) {
@@ -23,6 +45,7 @@ const searchProducts = async (req, res) => {
     res.status(500).json({ status: 'error', message: 'Server error' });
   }
 };
+
 
 // Controller to get a product by its ID
 const getProductById = async (req, res) => {
