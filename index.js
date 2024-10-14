@@ -1,12 +1,26 @@
 const express = require('express');
 const bodyParser = require('body-parser');
+const cors = require('cors');  // For enabling CORS
+const helmet = require('helmet');  // For securing HTTP headers
+const morgan = require('morgan');  // For logging requests
 const authRoutes = require('./routes/authRoutes');
 require('dotenv').config();
 
 const app = express();
-const PORT = process.env.PORT || 8000;
+const PORT = process.env.PORT || 3000;
 
 app.use(bodyParser.json());
+app.use(cors());  // Enable CORS
+app.use(helmet());  // Secure HTTP headers
+app.use(morgan('tiny'));  // Log requests
+
+
+// Health check endpoint
+app.get('/health', (req, res) => {
+  res.status(200).json({ status: 'UP' });
+});
+
+
 
 // Define a root route
 app.get('/', (req, res) => {
