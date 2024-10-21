@@ -1,75 +1,126 @@
-const { db } = require('../config/firebaseConfig'); // Import Firestore
-const jwt = require('jsonwebtoken');
+const { db } = require('../config/firebaseConfig');
+
+// Helper functions to avoid duplication
+const createUser = async (userData) => {
+  await db.collection('User').doc(userData.userId).set(userData);
+};
+
+const updateUserPushToken = async (userId, pushToken) => {
+  await db.collection('User').doc(userId).update({ pushToken });
+};
 
 // Sign-up function
 const signUpUser = async (req, res) => {
   try {
-    const { userId, fullName, email, profilePicture, addresses, phoneNumber, pushToken } = req.body;
+    const { userId, fullName, email, profilePicture, addresses, selectedAddressId, phoneNumber, pushToken } = req.body;
 
-    // Check if user already exists
+    // Input validation (add more as necessary)
+    if (!userId || !fullName) {
+      return res.status(400).json({ message: "Invalid input: userId and fullName are required." });
+    }
+
     const userSnapshot = await db.collection('User').doc(userId).get();
     if (userSnapshot.exists) {
-      // If the user exists and a push token is provided, update the push token
       if (pushToken) {
-        await db.collection('User').doc(email).update({
+        await updateUserPushToken(userId, pushToken);
+      }
+      return res.status(409).json({ message: "failed", error: "User already exists." });
+    }
+
+    const newUser = {
+      userId, fullName, email: email || null, profilePicture: profilePicture || null,
+      addresses: addresses || [], phoneNumber: phoneNumber || null,
+      dateJoined: new Date().toISOString(), pushToken: pushToken || null,
+      selectedAddressId: selectedAddressId || null,
+    };
+
+    await createUser(newUser);
+    res.status(201).json({ message: "success", data: newUser });
+  } catch (error) {
+    console.error("Error signing up user:", error);
+    res.status(500).json({ message: "failed", error: "An error occurred during signup." });
+  }
+};
+
+// Sign-in function
+  const signInUser = async (req, res) => {
+    try {
+      const { userId, email, pushToken } = req.body;
+  
+      // Fetch user data from Firestore
+      const userSnapshot = await db.collection('User').doc(userId).get();
+      if (!userSnapshot.exists) {
+        return res.status(400).json({
+          message: 'failed',
+          error: "User does not exist."
+        });
+      }
+  
+      const userData = userSnapshot.data();
+      if (pushToken) {
+        await db.collection('User').doc(userId).update({
           pushToken: pushToken
         });
       }
-      return res.status(400).json({ error: "User already exists." });
+  
+      const updatedUser = {
+        userId: userData.userId,
+        fullName: userData.fullName,
+        email: userData.email,
+        profilePicture: userData.profilePicture || null,
+        addresses: userData.addresses || [],
+        phoneNumber: userData.phoneNumber || null,
+        dateJoined: userData.dateJoined,
+        pushToken: pushToken || null,
+        selectedAddressId: userData.selectedAddressId || null, // Add selectedAddressId here
+      };
+  
+      res.status(200).json({ message: "success", data: updatedUser });
+    } catch (error) {
+      console.error("Error signing in user:", error);
+      res.status(500).json({ message: "failed", error: "An error occurred during sign-in." });
+    }
+  };
+
+  
+// Social login function
+const socialLogin = async (req, res) => {
+  try {
+    const { userId, fullName, email, profilePicture, addresses, selectedAddressId, phoneNumber, pushToken } = req.body;
+
+    if (!userId || !fullName) {
+      return res.status(400).json({ message: "Invalid input: userId and fullName are required." });
     }
 
-    // Create new user object without a password
+    const userSnapshot = await db.collection('User').doc(userId).get();
+    if (userSnapshot.exists) {
+      const userData = userSnapshot.data();
+      if (pushToken && pushToken.trim() !== "") {
+        await updateUserPushToken(userId, pushToken);
+      }
+
+      const updatedUser = {
+        ...userData,
+        pushToken: userData.pushToken || pushToken || null,
+        selectedAddressId: userData.selectedAddressId || null,
+      };
+
+      return res.status(200).json({ message: "success", data: updatedUser });
+    }
+
     const newUser = {
-      userId, // Store the user ID
-      fullName,
-      email,
-      profilePicture: profilePicture || null,
-      addresses: addresses || [],
-      phoneNumber: phoneNumber || null,
-      dateJoined: new Date().toISOString(),
-      pushToken: pushToken || null, // Store the push token if provided
+      userId, fullName, email: email || null, profilePicture: profilePicture || null,
+      addresses: addresses || [], phoneNumber: phoneNumber || null,
+      dateJoined: new Date().toISOString(), pushToken: pushToken || null,
+      selectedAddressId: selectedAddressId || null,
     };
 
-    // Save user in Firestore
-    await db.collection('User').doc(userId).set(newUser);
-    res.status(201).json({ message: "User registered successfully!" });
+    await createUser(newUser);
+    res.status(201).json({ message: "success", data: newUser });
   } catch (error) {
-    console.error("Error signing up user:", error);
-    res.status(500).json({ error: "An error occurred during signup." });
+    console.error("Error during social login:", error);
+    res.status(500).json({ message: "failed", error: "An error occurred during social login." });
   }
 };
 
-
-// Sign-in function
-const signInUser = async (req, res) => {
-  try {
-    const { email, password } = req.body;
-
-    // Fetch user data from Firestore
-    const userSnapshot = await db.collection('User').doc(email).get();
-    if (!userSnapshot.exists) {
-      return res.status(400).json({ error: "User does not exist." });
-    }
-
-    const userData = userSnapshot.data();
-
-    // Decrypt stored password
-    const decryptedPassword = CryptoJS.AES.decrypt(userData.password, process.env.SECRET_KEY).toString(CryptoJS.enc.Utf8);
-
-    // Compare passwords
-    if (decryptedPassword !== password) {
-      return res.status(400).json({ error: "Invalid credentials." });
-    }
-
-    // Generate JWT token
-    const token = jwt.sign({ email: userData.email, fullName: userData.fullName }, process.env.JWT_SECRET, { expiresIn: '1h' });
-
-    // Send response with token
-    res.status(200).json({ message: "Login successful!", token });
-  } catch (error) {
-    console.error("Error signing in user:", error);
-    res.status(500).json({ error: "An error occurred during sign-in." });
-  }
-};
-
-module.exports = { signUpUser, signInUser };
+module.exports = { signUpUser, signInUser, socialLogin };

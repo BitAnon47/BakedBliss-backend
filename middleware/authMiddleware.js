@@ -1,20 +1,34 @@
-const { verifyToken } = require('../utils/jwtUtil');
+const admin = require('firebase-admin');
 
-const authMiddleware = (req, res, next) => {
-  const token = req.header('Authorization').replace('Bearer ', '');
+// Initialize Firebase Admin SDK (make sure you've already set up your credentials)
+admin.initializeApp({
+  credential: admin.credential.applicationDefault() // or use serviceAccountKey.json if needed
+});
 
-  if (!token) {
-    return res.status(401).json({ msg: 'No token, authorization denied' });
+const authenticateToken = async (req, res, next) => {
+  try {
+    const authHeader = req.headers.authorization;
+
+    // Check if the authorization header exists and starts with 'Bearer'
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      return res.status(401).json({ message: 'Unauthorized: No token provided' });
+    }
+
+    // Extract the Firebase ID token from the header
+    const idToken = authHeader.split('Bearer ')[1];
+
+    // Verify the ID token with Firebase Admin SDK
+    const decodedToken = await admin.auth().verifyIdToken(idToken);
+
+    // Attach the decoded token's user information to the request object
+    req.user = decodedToken;
+
+    // Proceed to the next middleware or the API route
+    next();
+  } catch (error) {
+    console.error("Error verifying Firebase ID token:", error);
+    return res.status(401).json({ message: 'Unauthorized: Invalid or expired token' });
   }
-
-  const decoded = verifyToken(token);
-
-  if (!decoded) {
-    return res.status(401).json({ msg: 'Invalid token, authorization denied' });
-  }
-
-  req.user = decoded; // Attach user data to request object
-  next();
 };
 
-module.exports = authMiddleware;
+module.exports = authenticateToken;
