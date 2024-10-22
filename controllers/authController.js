@@ -82,45 +82,58 @@ const signUpUser = async (req, res) => {
     }
   };
 
-  
-// Social login function
+  // Social login function
 const socialLogin = async (req, res) => {
   try {
     const { userId, fullName, email, profilePicture, addresses, selectedAddressId, phoneNumber, pushToken } = req.body;
 
+    // Input validation
     if (!userId || !fullName) {
       return res.status(400).json({ message: "Invalid input: userId and fullName are required." });
     }
 
+    // Check if the user exists
     const userSnapshot = await db.collection('User').doc(userId).get();
+    
     if (userSnapshot.exists) {
       const userData = userSnapshot.data();
+
+      // Update pushToken if provided
       if (pushToken && pushToken.trim() !== "") {
         await updateUserPushToken(userId, pushToken);
       }
 
+      // Always return the updated pushToken (new one if provided, old one otherwise)
       const updatedUser = {
         ...userData,
-        pushToken: userData.pushToken || pushToken || null,
-        selectedAddressId: userData.selectedAddressId || null,
+        pushToken: pushToken || userData.pushToken || null, // Prefer new pushToken if available
+        selectedAddressId: selectedAddressId || userData.selectedAddressId || null, // Handle selectedAddressId
       };
 
       return res.status(200).json({ message: "success", data: updatedUser });
     }
 
+    // Create new user if not found
     const newUser = {
-      userId, fullName, email: email || null, profilePicture: profilePicture || null,
-      addresses: addresses || [], phoneNumber: phoneNumber || null,
-      dateJoined: new Date().toISOString(), pushToken: pushToken || null,
+      userId,
+      fullName,
+      email: email || null,
+      profilePicture: profilePicture || null,
+      addresses: addresses || [],
+      phoneNumber: phoneNumber || null,
+      dateJoined: new Date().toISOString(),
+      pushToken: pushToken || null,
       selectedAddressId: selectedAddressId || null,
     };
 
     await createUser(newUser);
-    res.status(201).json({ message: "success", data: newUser });
+    return res.status(201).json({ message: "success", data: newUser });
+
   } catch (error) {
     console.error("Error during social login:", error);
-    res.status(500).json({ message: "failed", error: "An error occurred during social login." });
+    return res.status(500).json({ message: "failed", error: "An error occurred during social login." });
   }
 };
+
 
 module.exports = { signUpUser, signInUser, socialLogin };
