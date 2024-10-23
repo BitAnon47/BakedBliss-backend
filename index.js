@@ -6,6 +6,7 @@ const morgan = require('morgan');  // For logging requests
 const authRoutes = require('./routes/authRoutes');
 const cartRoutes = require('./routes/cartRoutes');
 const orderRoutes = require('./routes/orderRoutes');
+const addressRoutes = require('./routes/addressRoutes');
 require('dotenv').config();
 
 const app = express();
@@ -23,8 +24,9 @@ app.get('/', (req, res) => {
 
 // Ordering cart maintaining routes here
 app.use('/baseApi/auth', authRoutes);
-app.use('/cart', cartRoutes);
-app.use('/order', orderRoutes);
+app.use('/user/cart', cartRoutes);
+app.use('/user/order', orderRoutes);
+app.use('/user/address', addressRoutes);
 
 app.listen(PORT, () => {
   console.log(`Server running on http://localhost:${PORT}`);
