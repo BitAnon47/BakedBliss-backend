@@ -24,8 +24,8 @@ app.get('/health', (req, res) => {
 
 // Use routes
 app.use('/api/v1/auth', authRoutes);
-app.use('/api/v1/products', productSearchRoutes);
-app.use('/api/v1/products', productRoutes);
+app.use('/api/v1/products', productSearchRoutes,productRoutes);
+//app.use('/api/v1/products', productRoutes);
 // Error handling middleware
 app.use((err, req, res, next) => {
   console.error(err.stack);
