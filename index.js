@@ -4,6 +4,8 @@ const cors = require('cors');  // For enabling CORS
 const helmet = require('helmet');  // For securing HTTP headers
 const morgan = require('morgan');  // For logging requests
 const authRoutes = require('./routes/authRoutes');
+const contactRoutes = require('./routes/contactRoutes');
+
 require('dotenv').config();
 
 const app = express();
@@ -29,6 +31,9 @@ app.get('/', (req, res) => {
 
 // Use the auth routes
 app.use('/baseApi/auth', authRoutes);
+
+// Use the contact routes
+app.use('/api', contactRoutes);
 
 app.listen(PORT, () => {
   console.log(`Server running on http://localhost:${PORT}`);
