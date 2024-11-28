@@ -1,7 +1,7 @@
 {
   "name": "clear",
   "version": "1.0.0",
-  "description": "A simple login and signup API with JWT",
+  "description": "A Baked bliss application",
   "main": "index.js",
   "scripts": {
     "start": "nodemon index.js"

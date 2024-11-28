@@ -1,11 +1,5 @@
 const admin = require('firebase-admin');
 
-/*
-// Initialize Firebase Admin SDK (make sure you've already set up your credentials)
-admin.initializeApp({
-  credential: admin.credential.applicationDefault() // or use serviceAccountKey.json if needed
-});
-*/
 const authenticateToken = async (req, res, next) => {
   try {
     const authHeader = req.headers.authorization;

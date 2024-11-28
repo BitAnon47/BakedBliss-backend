@@ -5,11 +5,16 @@ const helmet = require('helmet');  // For securing HTTP headers
 const morgan = require('morgan');  // For logging requests
 const authRoutes = require('./routes/authRoutes');
 const contactRoutes = require('./routes/contactRoutes');
+const productSearchRoutes = require('./routes/productRoutes');
+const productRoutes = require('./routes/productRoutes');
+const cartRoutes = require('./routes/cartRoutes');
+const orderRoutes = require('./routes/orderRoutes');
+const addressRoutes = require('./routes/addressRoutes');
 
 require('dotenv').config();
 
 const app = express();
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT;
 
 app.use(bodyParser.json());
 app.use(cors());  // Enable CORS
@@ -24,16 +29,21 @@ app.get('/health', (req, res) => {
 
 
 
-// Define a root route
-app.get('/', (req, res) => {
-  res.send('Welcome to the Authentication API!');
+// All routes of the application main functionality
+app.use('/baseApi/auth', authRoutes);
+app.use('/api/v1/products', productSearchRoutes,productRoutes);
+app.use('/api', contactRoutes);
+app.use('/user/cart', cartRoutes);
+app.use('/user/order', orderRoutes);
+app.use('/user/address', addressRoutes);
+
+
+// Error handling middleware
+app.use((err, req, res, next) => {
+  console.error(err.stack);
+  res.status(500).json({ status: 'error', message: 'Something went wrong!' });
 });
 
-// Use the auth routes
-app.use('/baseApi/auth', authRoutes);
-
-// Use the contact routes
-app.use('/api', contactRoutes);
 
 app.listen(PORT, () => {
   console.log(`Server running on http://localhost:${PORT}`);
